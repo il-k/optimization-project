@@ -16,10 +16,10 @@ os.system("rm eps=*")
 os.system("rm trajectories")
 
 #setup
-methods = ['BFGS','Newton-CG','CG']
+methods = ['BFGS','Newton-CG','CG', 'trust-exact']
 #epsilon = [1e-01,1e-02,1e-03,1e-04,1e-05,1e-06]
-epsilon = [(0.1)**(i) for i in range(1,6)]
-ndim    = [2**i for i in range(1,9)]
+epsilon = [(0.1)**(i) for i in range(1,9)]
+ndim    = [2**i for i in range(3,11)]
 maxdim  = ndim[len(ndim)-1] # hier max() verwenden!
 times   = np.zeros((len(ndim), len(epsilon), len(methods)), dtype=float)
 quasi_infty=1e+05
@@ -70,21 +70,23 @@ for i in range(len(ndim)):
     for  j in range(len(epsilon)):
         for m in range(len(methods)):
             tmp = timer()
-            result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=epsilon[j],options={'maxiter':quasi_infty,'disp':True})
+            result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=epsilon[j],options={'maxiter':quasi_infty,'disp':False})
             tmp = timer() - tmp
             times[i][j][m] = tmp
 
 
 # plot results time(dim) for every eps
 for i in range(len(epsilon)):
-    plt.figure()
+    fig, ax =   plt.subplots()
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     for m in range(len(methods)):  
-        plt.plot(ndim,times[:,i,m], label = "method="+str(methods[m]))
-    plt.xlabel("Number of Dimensions")
-    plt.ylabel("elapsed time in seconds")
-    plt.legend(loc='best')
-    plt.title("epsilon=" + str(epsilon[i]))
-    plt.savefig(fname="eps="+str(epsilon[i]), format="png")
+        ax.plot(ndim,times[:,i,m], label = "method="+str(methods[m]))
+    ax.set_xlabel("Number of Dimensions")
+    ax.set_ylabel("elapsed time in seconds")
+    ax.legend(loc='best')
+    fig.suptitle("epsilon=" + str(epsilon[i]))
+    fig.savefig(fname="eps="+str(epsilon[i]), format="png")
 
 
 '''
