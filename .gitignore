@@ -1,5 +1,6 @@
 # ignore all plots
-*.png
+eps=*
+trajectory
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
