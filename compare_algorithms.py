@@ -24,14 +24,13 @@ maxdim  = ndim[len(ndim)-1] # hier max() verwenden!
 times   = np.zeros((len(ndim), len(epsilon), len(methods)), dtype=float)
 quasi_infty=1e+05
 
-if ndim[0] != 2:
-    print "ERROR: smallest dimension should be 2!"
 #construct table with values of the fibonacci series beforehand
 #fib = [0,1]
 #for i in range(2,maxdim+1):
 #    fib.append(fib[i-2] + fib[i-1])
 #test new Matrix Q
 fib = [cmath.log(i) for i in range(1,maxdim+2)]
+fib = [1. + 1./i for i in range(1,maxdim+2)]
 
 # function to be optimized - quadratic form  xQx/2 + bx
 # with q_ij = fib(i) if i == j else 0 and b_i = i^(-1)
@@ -66,7 +65,7 @@ def hesse(x):
 #measurement
 for i in range(len(ndim)):
     # define arbitrary starting point
-    x = ndim[i]*[1.79]
+    x = ndim[i]*[179]
     for  j in range(len(epsilon)):
         for m in range(len(methods)):
             tmp = timer()
