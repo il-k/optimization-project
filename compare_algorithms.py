@@ -4,10 +4,9 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import numpy as np
 from timeit import default_timer as timer
-import os
-import cmath
+import os,cmath,sys
 
-#omit warnings about unneeded hessians
+#omit warnings in minimize() about unneeded hessians 
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -18,27 +17,38 @@ os.system("rm trajectories")
 #setup
 methods = ['BFGS','CG','trust-exact']
 #epsilon = [1e-01,1e-02,1e-03,1e-04,1e-05,1e-06]
-epsilon = [(0.1)**(i) for i in range(1,7)]
-ndim    = [2**i for i in range(3,10)]
+epsilon = [(0.1)**(i) for i in range(1,4)]
+ndim    = [2**i for i in range(3,9)]
 maxdim  = max(ndim)
 times   = np.zeros((len(ndim), len(epsilon), len(methods)), dtype=float)
 quasi_infty=1e+05
+testing = False
 
-#construct table with values of the diagonacci series beforehand
-#diag = [0,1]
-#for i in range(2,maxdim+1):
-#    diag.append(diag[i-2] + diag[i-1])
+if len(sys.argv) > 1:
+    if sys.argv[1] == "testing":
+        testing = True
+    else:
+        sys.exit("Usage: argument should be either 'testing' or empty")
 
-#test new Matrix Q
+
+#construct table with values of the diagonal matrix beforehand
+# fibonacci:
+diag = [0,1]
+for i in range(2,maxdim+1):
+    diag.append(diag[i-2] + diag[i-1])
+diag.remove(0)
+
+# alternatives:
 #diag = [cmath.log(i) for i in range(1,maxdim+2)]
-diag = [1. + 1./i for i in range(1,maxdim+2)]
+#diag = [1. + 1./i for i in range(1,maxdim+2)]
+
 
 # function to be optimized - quadratic form  xQx/2 + bx
 # with q_ij = diag(i) if i == j else 0 and b_i = i^(-1)
 def func(x):
     value = 0.
     for i in range(len(x)):
-        value += diag[i+1] * x[i]**2
+        value += diag[i] * x[i]**2
     value /= 2
     for i in range(len(x)):
         value += (i+1)**(-1) * x[i]
@@ -48,7 +58,7 @@ def func(x):
 def grad(x):
     value = []
     for i in range(len(x)):
-        value.append(diag[i+1] * x[i] + (i+1)**(-1))
+        value.append(diag[i] * x[i] + (i+1)**(-1))
     return np.array(value) # as required by scipy (array_like / - operation)
     
 # curvature matrix / hessian Q
@@ -58,12 +68,30 @@ def hesse(x):
         value.append([])
         for j in range(len(x)):
             if i == j:
-                value[i].append(diag[i+1])
+                value[i].append(diag[i])
             else:   
                 value[i].append(0)
     return np.array(value) # as required by scipy (dtype information)    
 
-#measurement
+
+# verify results with an easy example only if testing is enabled
+if testing == True:
+    dim = 3    
+    x = dim*[1.]
+    print "Value of f at ",x,":"
+    print func(x)
+    print "Value of grad(f) at ",x,":"
+    print grad(x)
+    print "Value of hesse(f) at ",x,":"    
+    print hesse(x)
+    print "Results:"
+    for m in range(len(methods)):
+        result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=min(epsilon))
+        print result.x,"\t:",methods[m]
+    sys.exit(0)
+
+
+# measurement
 for i in range(len(ndim)):
     # define arbitrary starting point
     x = ndim[i]*[179]
@@ -73,8 +101,6 @@ for i in range(len(ndim)):
             result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=epsilon[j],options={'maxiter':quasi_infty,'disp':False})
             tmp = timer() - tmp
             times[i][j][m] = tmp
-
-
 # plot results time(dim) for every eps
 for i in range(len(epsilon)):
     fig, ax =   plt.subplots()
@@ -90,13 +116,13 @@ for i in range(len(epsilon)):
 
 
 
-# 2d plot of the trajectory via projection onto the 01-coordinate plane, fixed eps=eps_c
-dim = 500
+# 2d plot of the trajectory via projection onto the 01-coordinate plane, fixed eps=eps_const
+dim = 231
 if dim > maxdim:
-    print "ERROR: dim should be smaller than maxdim!"
+    sys.exit("ERROR: dim should be smaller than maxdim!")
 plt.figure()
 x = [cmath.log(i+1) for i in range(dim)]
-eps_c = 1e-06
+eps_const = 1e-06
 for m in range(len(methods)):
     # callback function for intermediate values
     niter_cb = 0
@@ -106,8 +132,7 @@ for m in range(len(methods)):
         global interm_results
         interm_results.append(xk)
         niter_cb += 1
-        #print xk
-    result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=eps_c,callback=cback,options={'maxiter':quasi_infty,'disp':False})
+    result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=eps_const,callback=cback,options={'maxiter':quasi_infty,'disp':False})
     listx = []
     listy = []
     listx.append(x[0])
@@ -115,34 +140,14 @@ for m in range(len(methods)):
     for i in range(niter_cb):
         listx.append(interm_results[i][0])
         listy.append(interm_results[i][1]) 
-        #print interm_results[i][0], interm_results[i][1]
     plt.plot(listx,listy, label = "method="+str(methods[m]))
     #plt.scatter(listx,listy, marker='x')
-
 
 plt.ylabel("Y")
 plt.xlabel("X")
 plt.legend(loc='best')
-plt.title("trajectory; epsilon=" + str(eps_c))
+plt.title("Trajectories in the 01-plane; epsilon="+str(eps_const)+"; dimensions:"+str(dim))
 plt.savefig(fname="trajectories", format="png")
 
 
-'''
-# testing
-x = ndim[0]*[1.]
-#print func(x)
-#print grad(x)
-#print hesse(x)
-# solution to x+1=0,y+1/2=0,2z+1/3=0 <-> Ax+b=0
-# result = -1,-1/2,-1/6
-result = minimize(func,x,method='BFGS',jac=grad,tol=eps[0])
-print result.x
-result = minimize(func,x,method='Newton-CG',jac=grad,hess=hesse,tol=eps[0])
-print result.x
-result = minimize(func,x,method='CG',jac=grad,tol=eps[0])
-print result.x
-# trust-exact macht probleme ab ndim=94:  'long' object has no attribute 'sqrt'
-#result = minimize(func,x,method='trust-exact',jac=grad,hess=hesse,tol=eps[0])
-#print result.x 
-'''
 
