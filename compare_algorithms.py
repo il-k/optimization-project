@@ -17,30 +17,42 @@ os.system("rm trajectories")
 #setup
 methods = ['BFGS','CG','trust-exact']
 #epsilon = [1e-01,1e-02,1e-03,1e-04,1e-05,1e-06]
-epsilon = [(0.1)**(i) for i in range(1,4)]
-ndim    = [2**i for i in range(3,9)]
+epsilon = [(0.1)**(i) for i in range(1,5)]
+ndim    = [2**i for i in range(3,11)]
 maxdim  = max(ndim)
 times   = np.zeros((len(ndim), len(epsilon), len(methods)), dtype=float)
 quasi_infty=1e+05
 testing = False
+dim = 231 # for 2d trajectories
+if dim > maxdim:
+    sys.exit("ERROR: dim should be smaller than maxdim!")
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "testing":
-        testing = True
+
+#dealing with command line arguments and constructing diag[]
+if len(sys.argv) == 1:
+    sys.exit("Usage: at least one argument required to determine the Matrix Q.")
+else:
+    if sys.argv[1] in ['1','2','3']:
+        if sys.argv[1] == '1':
+            # fibonacci
+            diag = [0,1]
+            for i in range(2,maxdim+1):
+                diag.append(diag[i-2] + diag[i-1])
+            diag.remove(0)
+        elif sys.argv[1] == '2':
+            # first alternative
+            # 1st value is log(2), bacause log(1)=0 causes problems
+            diag = [cmath.log(i+1) for i in range(1,maxdim+2)]
+        elif sys.argv[1] == '3':
+            # second alternative
+            diag = [1. + 1./i for i in range(1,maxdim+2)]
     else:
-        sys.exit("Usage: argument should be either 'testing' or empty")
-
-
-#construct table with values of the diagonal matrix beforehand
-# fibonacci:
-diag = [0,1]
-for i in range(2,maxdim+1):
-    diag.append(diag[i-2] + diag[i-1])
-diag.remove(0)
-
-# alternatives:
-#diag = [cmath.log(i) for i in range(1,maxdim+2)]
-#diag = [1. + 1./i for i in range(1,maxdim+2)]
+        sys.exit("Usage: first argument should be either 1, 2 or 3.")
+    if len(sys.argv) > 2:
+        if sys.argv[2] == "testing":
+            testing = True
+        else:
+            sys.exit("Usage: second argument should be either 'testing' or left empty.")
 
 
 # function to be optimized - quadratic form  xQx/2 + bx
@@ -117,9 +129,6 @@ for i in range(len(epsilon)):
 
 
 # 2d plot of the trajectory via projection onto the 01-coordinate plane, fixed eps=eps_const
-dim = 231
-if dim > maxdim:
-    sys.exit("ERROR: dim should be smaller than maxdim!")
 plt.figure()
 x = [cmath.log(i+1) for i in range(dim)]
 eps_const = 1e-06
