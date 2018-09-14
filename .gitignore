@@ -1,6 +1,6 @@
 # ignore all plots
 eps=*
-trajectory
+trajectories
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

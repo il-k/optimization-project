@@ -16,28 +16,29 @@ os.system("rm eps=*")
 os.system("rm trajectories")
 
 #setup
-methods = ['BFGS','Newton-CG','CG', 'trust-exact']
+methods = ['BFGS','CG','trust-exact']
 #epsilon = [1e-01,1e-02,1e-03,1e-04,1e-05,1e-06]
-epsilon = [(0.1)**(i) for i in range(1,9)]
-ndim    = [2**i for i in range(3,11)]
-maxdim  = ndim[len(ndim)-1] # hier max() verwenden!
+epsilon = [(0.1)**(i) for i in range(1,7)]
+ndim    = [2**i for i in range(3,10)]
+maxdim  = max(ndim)
 times   = np.zeros((len(ndim), len(epsilon), len(methods)), dtype=float)
 quasi_infty=1e+05
 
-#construct table with values of the fibonacci series beforehand
-#fib = [0,1]
+#construct table with values of the diagonacci series beforehand
+#diag = [0,1]
 #for i in range(2,maxdim+1):
-#    fib.append(fib[i-2] + fib[i-1])
+#    diag.append(diag[i-2] + diag[i-1])
+
 #test new Matrix Q
-fib = [cmath.log(i) for i in range(1,maxdim+2)]
-fib = [1. + 1./i for i in range(1,maxdim+2)]
+#diag = [cmath.log(i) for i in range(1,maxdim+2)]
+diag = [1. + 1./i for i in range(1,maxdim+2)]
 
 # function to be optimized - quadratic form  xQx/2 + bx
-# with q_ij = fib(i) if i == j else 0 and b_i = i^(-1)
+# with q_ij = diag(i) if i == j else 0 and b_i = i^(-1)
 def func(x):
     value = 0.
     for i in range(len(x)):
-        value += fib[i+1] * x[i]**2
+        value += diag[i+1] * x[i]**2
     value /= 2
     for i in range(len(x)):
         value += (i+1)**(-1) * x[i]
@@ -47,7 +48,7 @@ def func(x):
 def grad(x):
     value = []
     for i in range(len(x)):
-        value.append(fib[i+1] * x[i] + (i+1)**(-1))
+        value.append(diag[i+1] * x[i] + (i+1)**(-1))
     return np.array(value) # as required by scipy (array_like / - operation)
     
 # curvature matrix / hessian Q
@@ -57,7 +58,7 @@ def hesse(x):
         value.append([])
         for j in range(len(x)):
             if i == j:
-                value[i].append(fib[i+1])
+                value[i].append(diag[i+1])
             else:   
                 value[i].append(0)
     return np.array(value) # as required by scipy (dtype information)    
@@ -88,26 +89,35 @@ for i in range(len(epsilon)):
     fig.savefig(fname="eps="+str(epsilon[i]), format="png")
 
 
-'''
-# beispiel in 2dim (ndim[0]) mit callback, plotte fortschritt, eps = 1e-04
+
+# 2d plot of the trajectory via projection onto the 01-coordinate plane, fixed eps=eps_c
+dim = 500
+if dim > maxdim:
+    print "ERROR: dim should be smaller than maxdim!"
 plt.figure()
-x = [1.792+i for i in range(5)]
-eps_c = 1e-05
+x = [cmath.log(i+1) for i in range(dim)]
+eps_c = 1e-06
 for m in range(len(methods)):
     # callback function for intermediate values
     niter_cb = 0
     interm_results = []
     def cback(xk):
-        global ninit_cb
+        global niter_cb
         global interm_results
         interm_results.append(xk)
         niter_cb += 1
-    result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=eps_c,callback=cback)
-    listx = listy = []
+        #print xk
+    result = minimize(func,x,method=methods[m],jac=grad,hess=hesse,tol=eps_c,callback=cback,options={'maxiter':quasi_infty,'disp':False})
+    listx = []
+    listy = []
+    listx.append(x[0])
+    listy.append(x[1])
     for i in range(niter_cb):
-        listx.append(interm_result[i][0])
-        listy.append(interm_result[i][1]) 
+        listx.append(interm_results[i][0])
+        listy.append(interm_results[i][1]) 
+        #print interm_results[i][0], interm_results[i][1]
     plt.plot(listx,listy, label = "method="+str(methods[m]))
+    #plt.scatter(listx,listy, marker='x')
 
 
 plt.ylabel("Y")
@@ -115,7 +125,7 @@ plt.xlabel("X")
 plt.legend(loc='best')
 plt.title("trajectory; epsilon=" + str(eps_c))
 plt.savefig(fname="trajectories", format="png")
-'''
+
 
 '''
 # testing
