@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import numpy as np
 from timeit import default_timer as timer
-import os,cmath,sys
+import os,sys
 
 #omit warnings in minimize() about unneeded hessians 
 import warnings
@@ -42,10 +42,10 @@ else:
         elif sys.argv[1] == '2':
             # first alternative
             # 1st value is log(2), bacause log(1)=0 causes problems
-            diag = [cmath.log(i+1) for i in range(1,maxdim+2)]
+            diag = [np.log(i+1) for i in range(1,maxdim+1)]
         elif sys.argv[1] == '3':
             # second alternative
-            diag = [1. + 1./i for i in range(1,maxdim+2)]
+            diag = [1. + 1./i for i in range(1,maxdim+1)]
     else:
         sys.exit("Usage: first argument should be either 1, 2 or 3.")
     if len(sys.argv) > 2:
@@ -124,13 +124,13 @@ for i in range(len(epsilon)):
     ax.set_ylabel("elapsed time in seconds")
     ax.legend(loc='best')
     fig.suptitle("epsilon=" + str(epsilon[i]))
-    fig.savefig(fname="eps="+str(epsilon[i]), format="png")
+    fig.savefig(fname="eps="+str(epsilon[i]), format="png", dpi=400)
 
 
 
 # 2d plot of the trajectory via projection onto the 01-coordinate plane, fixed eps=eps_const
 plt.figure()
-x = [cmath.log(i+1) for i in range(dim)]
+x = [np.log(i+1) for i in range(dim)]
 eps_const = 1e-06
 for m in range(len(methods)):
     # callback function for intermediate values
@@ -156,7 +156,7 @@ plt.ylabel("Y")
 plt.xlabel("X")
 plt.legend(loc='best')
 plt.title("Trajectories in the 01-plane; epsilon="+str(eps_const)+"; dimensions:"+str(dim))
-plt.savefig(fname="trajectories", format="png")
+plt.savefig(fname="trajectories", format="png", dpi=400)
 
 
 
