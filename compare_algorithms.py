@@ -124,7 +124,7 @@ for i in range(len(epsilon)):
     ax.set_ylabel("elapsed time in seconds")
     ax.legend(loc='best')
     fig.suptitle("epsilon=" + str(epsilon[i]))
-    fig.savefig(fname="eps="+str(epsilon[i]), format="png", dpi=400)
+    fig.savefig(fname="eps="+str(epsilon[i]), format="png", dpi=250)
 
 
 
@@ -156,7 +156,7 @@ plt.ylabel("Y")
 plt.xlabel("X")
 plt.legend(loc='best')
 plt.title("Trajectories in the 01-plane; epsilon="+str(eps_const)+"; dimensions:"+str(dim))
-plt.savefig(fname="trajectories", format="png", dpi=400)
+plt.savefig(fname="trajectories", format="png", dpi=250)
 
 
 
